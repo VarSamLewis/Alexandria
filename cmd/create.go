@@ -15,6 +15,7 @@ var (
 	title       string
 	description string
 	ticketType  string
+	criticalpath bool
 	priority    string
 	assignedTo  string
 	tags        string
@@ -41,7 +42,7 @@ var createCmd = &cobra.Command{
 		tPriority := ticket.Priority(priority)
 		if !tPriority.Valid() {
 			return fmt.Errorf("invalid priority: %s (must be: low, medium, or high)", priority)
-		}
+		} 
 
 		// Parse tags
 		var tagList []string
@@ -61,6 +62,7 @@ var createCmd = &cobra.Command{
 			Type:        tType,
 			Title:       title,
 			Description: description,
+      CriticalPath: criticalpath,  
 			Status:      ticket.StatusOpen, // Default to open
 			Priority:    tPriority,
 			Tags:        tagList,
@@ -92,17 +94,13 @@ var createCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(createCmd)
 
-	// Required flags
 	createCmd.Flags().StringVarP(&title, "title", "t", "", "Ticket title (required)")
 	createCmd.Flags().StringVarP(&description, "description", "d", "", "Ticket description")
 	createCmd.Flags().StringVar(&ticketType, "type", "task", "Ticket type (bug, feature, task)")
-	createCmd.Flags().StringVarP(&priority, "priority", "p", "medium", "Ticket priority (low, medium, high)")
-
-	// Optional flags
+	createCmd.Flags().StringVarP(&priority, "priority", "p", "undefined", "Ticket priority (low, medium, high)")
+	createCmd.Flags().BoolVarP(&criticalpath, "criticalpath", "c", false, "Mark ticket as critical path")
 	createCmd.Flags().StringVarP(&assignedTo, "assigned-to", "a", "", "Assign ticket to user")
 	createCmd.Flags().StringVar(&createdBy, "created-by", "", "Ticket creator")
 	createCmd.Flags().StringVar(&tags, "tags", "", "Comma-separated list of tags")
-
-	// Mark required flags
 	createCmd.MarkFlagRequired("title")
 }
