@@ -9,6 +9,7 @@ type Ticket struct {
 	Type        Type      `json:"type"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
+	CriticalPath bool     `json:"criticalpath"`
 	Status      Status    `json:"status"`
 	Priority    Priority  `json:"priority"`
 	CreatedBy   *string   `json:"created_by,omitempty"`
@@ -53,10 +54,18 @@ func (s Status) Valid() bool {
 	return false
 }
 
+type CriticalPath bool
+
+const (
+	CriticalPathTrue CriticalPath = true
+	CriticalPathFalse CriticalPath = false
+)
+
 // Priority represents the priority level of a ticket
 type Priority string
 
 const (
+	PriorityUndefined Priority = "undefined"
 	PriorityLow    Priority = "low"
 	PriorityMedium Priority = "medium"
 	PriorityHigh   Priority = "high"
@@ -65,7 +74,7 @@ const (
 // Valid returns true if the priority is valid
 func (p Priority) Valid() bool {
 	switch p {
-	case PriorityLow, PriorityMedium, PriorityHigh:
+	case PriorityUndefined, PriorityLow, PriorityMedium, PriorityHigh:
 		return true
 	}
 	return false
