@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"mycli/internal/database"
 	"mycli/internal/ticket"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ var (
 	assignedTo  string
 	tags        string
 	createdBy   string
+	project     string
 )
 
 var createCmd = &cobra.Command{
@@ -78,13 +80,28 @@ var createCmd = &cobra.Command{
 			newTicket.CreatedBy = &createdBy
 		}
 
+		// Validate project is provided
+		if project == "" {
+			return fmt.Errorf("project is required")
+		}
+
+		// Save ticket to database
+		db := database.GetDB()
+		if db == nil {
+			return fmt.Errorf("database not initialized")
+		}
+
+		if err := newTicket.Create(db, project); err != nil {
+			return fmt.Errorf("failed to save ticket: %w", err)
+		}
+
 		// Output as JSON
 		jsonData, err := json.MarshalIndent(newTicket, "", "  ")
 		if err != nil {
 			return fmt.Errorf("failed to marshal ticket: %w", err)
 		}
 
-		fmt.Println("Ticket created successfully:")
+		fmt.Println("Ticket created and saved successfully:")
 		fmt.Println(string(jsonData))
 
 		return nil
@@ -102,5 +119,7 @@ func init() {
 	createCmd.Flags().StringVarP(&assignedTo, "assigned-to", "a", "", "Assign ticket to user")
 	createCmd.Flags().StringVar(&createdBy, "created-by", "", "Ticket creator")
 	createCmd.Flags().StringVar(&tags, "tags", "", "Comma-separated list of tags")
+	createCmd.Flags().StringVar(&project, "project", "", "Project name (required)")
 	createCmd.MarkFlagRequired("title")
+	createCmd.MarkFlagRequired("project")
 }
