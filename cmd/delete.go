@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"mycli/internal/database"
-	"mycli/internal/ticket"
+	"alexandria/internal/database"
+	"alexandria/internal/ticket"
 
 	"github.com/spf13/cobra"
 )
