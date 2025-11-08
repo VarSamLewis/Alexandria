@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"mycli/internal/database"
+	"alexandria/internal/database"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "mycli",
+	Use:   "alexandria",
 	Short: "A simple ticket management CLI",
 	Long:  `A command-line tool for managing tickets and tasks.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {

@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"mycli/internal/database"
-	"mycli/internal/ticket"
+	"alexandria/internal/database"
+	"alexandria/internal/ticket"
 	"strings"
 
 	"github.com/spf13/cobra"

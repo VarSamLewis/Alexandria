@@ -1,6 +1,6 @@
 package main
 
-import "mycli/cmd"
+import "alexandria/cmd"
 
 func main() {
 	cmd.Execute()
