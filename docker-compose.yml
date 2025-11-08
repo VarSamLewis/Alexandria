@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  alexandria:
+    build: .
+    image: alexandria:latest
+    volumes:
+      - alexandria-data:/root/work/DB/Alexandria
+    # Override this command when running
+    command: --help
+
+volumes:
+  alexandria-data:
+    driver: local

@@ -1,0 +1,30 @@
+# Binaries
+Alexandria
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*.test
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
+LICENSE
+
+# Database files (will be volume mounted)
+*.db
+*.db-shm
+*.db-wal

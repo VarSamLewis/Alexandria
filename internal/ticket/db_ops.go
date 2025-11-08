@@ -255,3 +255,48 @@ func loadComments(db *sql.DB, ticketID string) ([]string, error) {
 
 	return comments, rows.Err()
 }
+  // Delete removes a ticket from the database
+func (t *Ticket) Delete(db *sql.DB, project string, id string, title string) error {
+  // Start a transaction
+      tx, err := db.Begin()
+      if err != nil {
+          return fmt.Errorf("failed to begin transaction: %w", err)
+      }
+      defer tx.Rollback()
+
+      var ticketID string
+
+      // Determine which identifier to use
+      if id != "" {
+          ticketID = id
+      } else if title != "" {
+          err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)
+          if err == sql.ErrNoRows {
+              return fmt.Errorf("no ticket found with title '%s'", title)
+          }
+          if err != nil {
+              return fmt.Errorf("failed to find ticket: %w", err)
+          }
+      } else {
+          return fmt.Errorf("either id or title must be provided")
+      }
+
+      // Delete from all tables using ticketID
+      if _, err := tx.Exec("DELETE FROM ticket_tags WHERE ticket_id = ?", ticketID); err != nil {
+          return fmt.Errorf("failed to delete tags: %w", err)
+      }
+
+      if _, err := tx.Exec("DELETE FROM ticket_files WHERE ticket_id = ?", ticketID); err != nil {
+          return fmt.Errorf("failed to delete files: %w", err)
+      }
+
+      if _, err := tx.Exec("DELETE FROM ticket_comments WHERE ticket_id = ?", ticketID); err != nil {
+          return fmt.Errorf("failed to delete comments: %w", err)
+      }
+
+      if _, err := tx.Exec("DELETE FROM tickets WHERE id = ? AND project = ?", ticketID, project); err != nil {
+          return fmt.Errorf("failed to delete ticket: %w", err)
+      }
+
+      return tx.Commit()
+  }
