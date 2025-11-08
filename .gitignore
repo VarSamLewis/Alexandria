@@ -8,6 +8,7 @@
 *.so
 *.dylib
 mycli
+Alexandria
 
 # Test binary, built with `go test -c`
 *.test
@@ -57,3 +58,13 @@ build/
 # Temporary files
 tmp/
 temp/
+
+[stage-1
+[internal]
+[building]
+exporting 
+naming
+transferring
+writing
+CACHED
+=

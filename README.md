@@ -2,13 +2,77 @@
 
 Alexandria is a project to create a better approach to managing work, it's engineer lead and use a CLI interface.
 
-## Build
+## Installation & Running
 
+### Running Locally
+
+**Build:**
 ```bash
 go build -o Alexandria
 ```
 
-## Commands
+**Run:**
+```bash
+./Alexandria [command] [flags]
+```
+
+### Running with Docker
+
+**Build the Docker image:**
+```bash
+docker build -t alexandria .
+```
+
+**Run with Docker:**
+```bash
+# Create a volume for persistent database storage
+docker volume create alexandria-data
+
+**Docker Examples:**
+```bash
+# Create a ticket
+docker run  -v alexandria-data:/root/work/DB/Alexandria alexandria create \
+  --title "Fix login bug" --project "Alexandria" --type bug --priority high
+
+# List tickets
+docker run -v alexandria-data:/root/work/DB/Alexandria alexandria list
+
+# Delete a ticket
+docker run -v alexandria-data:/root/work/DB/Alexandria alexandria delete \
+  --project "Alexandria" --id "1762471479992286465"
+```
+
+**Using docker-compose (recommended):**
+
+The repository includes a `docker-compose.yml` file. To use it:
+```bash
+# Build and run
+docker-compose run  alexandria create --title "New ticket" --project "Alexandria"
+docker-compose run  alexandria list
+```
+
+**Shell Alias (optional convenience):**
+
+Add this to your `.bashrc` or `.zshrc` for easier usage:
+```bash
+# For local installation
+alias Alexandria='./Alexandria'
+
+# For Docker installation
+alias Alexandria='docker run  -v alexandria-data:/root/work/DB/Alexandria alexandria'
+
+# For docker-compose installation
+alias Alexandria='docker-compose run alexandria'
+```
+
+Then you can use:
+```bash
+Alexandria create --title "My task" --project "Alexandria"
+Alexandria list
+Alexandria delete --project "Alexandria" --id "123"
+```
+
+### Local Commands
 
 ### Create a Ticket
 
@@ -64,10 +128,32 @@ Examples:
 ./Alexandria list --tags "security,urgent"
 ```
 
-## Database
+### Delete a Ticket
 
-Tickets are stored in a SQLite database at:
+```bash
+./Alexandria delete --project "ProjectName" [--id ID | --title "Ticket Title"]
 ```
-~/work/DB/Alexandria/tickets.db
+
+Options:
+- `--project, -p` - Project name (required)
+- `--id, -i` - Ticket ID to delete
+- `--title, -t` - Ticket title to delete
+
+**Note:** Either `--id` or `--title` must be provided (not both).
+
+Examples:
+```bash
+# Delete by ID
+./Alexandria delete --project "Alexandria" --id "1699564789123456789"
+
+# Delete by title
+./Alexandria delete --project "Alexandria" --title "Fix login bug"
+
+# Using short flags
+./Alexandria delete -p "Alexandria" -i "1699564789123456789"
+```
+
+**Warning:** This command will permanently delete the ticket and all related data including tags, files, and comments.
+
 ```
 
