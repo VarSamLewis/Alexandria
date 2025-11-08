@@ -78,6 +78,110 @@ func (t *Ticket) Create(db *sql.DB, project string) error {
 	return nil
 }
 
+// Update modifies an existing ticket in the database
+func (t *Ticket) Update(db *sql.DB, id string, title string) error {
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	var ticketID string
+
+	// Determine which identifier to use
+	if id != "" {
+		ticketID = id
+	} else if title != "" {
+		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ?", title).Scan(&ticketID)
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("no ticket found with title '%s'", title)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to find ticket: %w", err)
+		}
+	} else {
+		return fmt.Errorf("either id or title must be provided")
+	}
+
+	// Update the main ticket record
+	updateTicketQuery := `
+		UPDATE tickets SET
+			type = ?, title = ?, description = ?, critical_path = ?,
+			status = ?, priority = ?, assigned_to = ?, updated_at = ?
+		WHERE id = ?`
+
+	result, err := tx.Exec(
+		updateTicketQuery,
+		t.Type,
+		t.Title,
+		t.Description,
+		t.CriticalPath,
+		t.Status,
+		t.Priority,
+		t.AssignedTo,
+		time.Now(),
+		ticketID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update ticket: %w", err)
+	}
+
+	// Check if any rows were affected
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no ticket found with the provided identifier")
+	}
+
+	// Update tags - delete existing and insert new ones
+	if _, err := tx.Exec("DELETE FROM ticket_tags WHERE ticket_id = ?", ticketID); err != nil {
+		return fmt.Errorf("failed to delete existing tags: %w", err)
+	}
+
+	if len(t.Tags) > 0 {
+		insertTagQuery := `INSERT INTO ticket_tags (ticket_id, tag) VALUES (?, ?)`
+		for _, tag := range t.Tags {
+			if _, err := tx.Exec(insertTagQuery, ticketID, tag); err != nil {
+				return fmt.Errorf("failed to insert tag: %w", err)
+			}
+		}
+	}
+
+	// Update files - delete existing and insert new ones
+	if _, err := tx.Exec("DELETE FROM ticket_files WHERE ticket_id = ?", ticketID); err != nil {
+		return fmt.Errorf("failed to delete existing files: %w", err)
+	}
+
+	if len(t.Files) > 0 {
+		insertFileQuery := `INSERT INTO ticket_files (ticket_id, file_path) VALUES (?, ?)`
+		for _, file := range t.Files {
+			if _, err := tx.Exec(insertFileQuery, ticketID, file); err != nil {
+				return fmt.Errorf("failed to insert file: %w", err)
+			}
+		}
+	}
+
+	// Add new comments (don't delete existing ones)
+	if len(t.Comments) > 0 {
+		insertCommentQuery := `INSERT INTO ticket_comments (ticket_id, comment_text, created_at) VALUES (?, ?, ?)`
+		for _, comment := range t.Comments {
+			if _, err := tx.Exec(insertCommentQuery, ticketID, comment, time.Now()); err != nil {
+				return fmt.Errorf("failed to insert comment: %w", err)
+			}
+		}
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
 // List retrieves tickets from the database based on the provided filters
 func List(db *sql.DB, filters Filters) ([]Ticket, error) {
 	query := `

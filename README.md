@@ -37,6 +37,10 @@ docker run  -v alexandria-data:/root/work/DB/Alexandria alexandria create \
 # List tickets
 docker run -v alexandria-data:/root/work/DB/Alexandria alexandria list
 
+# Update a ticket
+docker run -v alexandria-data:/root/work/DB/Alexandria alexandria update \
+  --id "1762471479992286465" --status "in_progress" --priority high
+
 # Delete a ticket
 docker run -v alexandria-data:/root/work/DB/Alexandria alexandria delete \
   --project "Alexandria" --id "1762471479992286465"
@@ -49,6 +53,7 @@ The repository includes a `docker-compose.yml` file. To use it:
 # Build and run
 docker-compose run  alexandria create --title "New ticket" --project "Alexandria"
 docker-compose run  alexandria list
+docker-compose run  alexandria update --id "123" --status "resolved"
 ```
 
 **Shell Alias (optional convenience):**
@@ -69,6 +74,7 @@ Then you can use:
 ```bash
 Alexandria create --title "My task" --project "Alexandria"
 Alexandria list
+Alexandria update --id "123" --status "in_progress"
 Alexandria delete --project "Alexandria" --id "123"
 ```
 
@@ -127,6 +133,59 @@ Examples:
 # List tickets with specific tags
 ./Alexandria list --tags "security,urgent"
 ```
+
+### Update a Ticket
+
+```bash
+./Alexandria update [--id ID | --title "Ticket Title"] [options]
+```
+
+Options:
+- `--id, -i` - Ticket ID to update
+- `--title, -t` - Find ticket by title to update
+- `--new-title` - New title for the ticket
+- `--description, -d` - New description for the ticket
+- `--type` - New type: bug, feature, task
+- `--status` - New status: open, in_progress, resolved, closed
+- `--priority, -p` - New priority: undefined, low, medium, high
+- `--criticalpath, -c` - Mark ticket as critical path (boolean flag)
+- `--assigned-to, -a` - Assign ticket to user
+- `--created-by` - Update ticket creator
+- `--tags` - Comma-separated list of tags (replaces existing)
+- `--files` - Comma-separated list of file paths (replaces existing)
+- `--comments` - Comma-separated list of comments to add
+
+**Note:** Either `--id` or `--title` must be provided to identify the ticket. At least one field to update must be specified.
+
+Examples:
+```bash
+# Update ticket status by ID
+./Alexandria update --id "1699564789123456789" --status "in_progress"
+
+# Update multiple fields by title
+./Alexandria update --title "Fix login bug" --status "resolved" --priority high
+
+# Change ticket assignment and add tags
+./Alexandria update --id "1699564789123456789" --assigned-to "john@example.com" --tags "security,urgent,reviewed"
+
+# Update description and mark as critical
+./Alexandria update --id "1699564789123456789" --description "Updated requirements" --criticalpath
+
+# Add comments to a ticket
+./Alexandria update --id "1699564789123456789" --comments "Fixed in PR #123,Ready for review"
+
+# Change the ticket title
+./Alexandria update --title "Fix login bug" --new-title "Fix authentication issue"
+
+# Using short flags
+./Alexandria update -i "1699564789123456789" -a "jane@example.com" -p high
+```
+
+**Behavior:**
+- Only specified fields are updated; unspecified fields remain unchanged
+- Tags and files are replaced entirely when specified (not appended)
+- Comments are added to existing comments (not replaced)
+- The `updated_at` timestamp is automatically set to the current time
 
 ### Delete a Ticket
 
