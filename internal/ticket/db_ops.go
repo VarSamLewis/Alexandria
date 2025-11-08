@@ -14,16 +14,15 @@ func (t *Ticket) Create(db *sql.DB, project string) error {
 	}
 	defer tx.Rollback()
 
-	// Insert the main ticket record
+	// Insert the main ticket record (ID is auto-generated)
 	insertTicketQuery := `
 		INSERT INTO tickets (
-			id, project, type, title, description, critical_path,
+			project, type, title, description, critical_path,
 			status, priority, created_by, assigned_to, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
-	_, err = tx.Exec(
+	result, err := tx.Exec(
 		insertTicketQuery,
-		t.ID,
 		project,
 		t.Type,
 		t.Title,
@@ -39,6 +38,13 @@ func (t *Ticket) Create(db *sql.DB, project string) error {
 	if err != nil {
 		return fmt.Errorf("failed to insert ticket: %w", err)
 	}
+
+	// Get the auto-generated ID
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get inserted ID: %w", err)
+	}
+	t.ID = id
 
 	// Insert tags
 	if len(t.Tags) > 0 {
@@ -79,7 +85,7 @@ func (t *Ticket) Create(db *sql.DB, project string) error {
 }
 
 // Update modifies an existing ticket in the database
-func (t *Ticket) Update(db *sql.DB, project string, id string, title string) error {
+func (t *Ticket) Update(db *sql.DB, project string, id int64, title string) error {
 	// Start a transaction
 	tx, err := db.Begin()
 	if err != nil {
@@ -87,10 +93,10 @@ func (t *Ticket) Update(db *sql.DB, project string, id string, title string) err
 	}
 	defer tx.Rollback()
 
-	var ticketID string
+	var ticketID int64
 
 	// Determine which identifier to use
-	if id != "" {
+	if id != 0 {
 		ticketID = id
 	} else if title != "" {
 		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)
@@ -238,7 +244,7 @@ func List(db *sql.DB, filters Filters) ([]Ticket, error) {
 	defer rows.Close()
 
 	var tickets []Ticket
-	ticketMap := make(map[string]*Ticket)
+	ticketMap := make(map[int64]*Ticket)
 
 	for rows.Next() {
 		var t Ticket
@@ -302,7 +308,7 @@ func List(db *sql.DB, filters Filters) ([]Ticket, error) {
 }
 
 // loadTags loads tags for a specific ticket
-func loadTags(db *sql.DB, ticketID string) ([]string, error) {
+func loadTags(db *sql.DB, ticketID int64) ([]string, error) {
 	rows, err := db.Query("SELECT tag FROM ticket_tags WHERE ticket_id = ?", ticketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load tags: %w", err)
@@ -322,7 +328,7 @@ func loadTags(db *sql.DB, ticketID string) ([]string, error) {
 }
 
 // loadFiles loads files for a specific ticket
-func loadFiles(db *sql.DB, ticketID string) ([]string, error) {
+func loadFiles(db *sql.DB, ticketID int64) ([]string, error) {
 	rows, err := db.Query("SELECT file_path FROM ticket_files WHERE ticket_id = ?", ticketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load files: %w", err)
@@ -342,7 +348,7 @@ func loadFiles(db *sql.DB, ticketID string) ([]string, error) {
 }
 
 // loadComments loads comments for a specific ticket
-func loadComments(db *sql.DB, ticketID string) ([]string, error) {
+func loadComments(db *sql.DB, ticketID int64) ([]string, error) {
 	rows, err := db.Query("SELECT comment_text FROM ticket_comments WHERE ticket_id = ? ORDER BY created_at", ticketID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load comments: %w", err)
@@ -361,7 +367,7 @@ func loadComments(db *sql.DB, ticketID string) ([]string, error) {
 	return comments, rows.Err()
 }
   // Delete removes a ticket from the database
-func (t *Ticket) Delete(db *sql.DB, project string, id string, title string) error {
+func (t *Ticket) Delete(db *sql.DB, project string, id int64, title string) error {
   // Start a transaction
       tx, err := db.Begin()
       if err != nil {
@@ -369,10 +375,10 @@ func (t *Ticket) Delete(db *sql.DB, project string, id string, title string) err
       }
       defer tx.Rollback()
 
-      var ticketID string
+      var ticketID int64
 
       // Determine which identifier to use
-      if id != "" {
+      if id != 0 {
           ticketID = id
       } else if title != "" {
           err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)

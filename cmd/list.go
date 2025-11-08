@@ -134,8 +134,8 @@ func printTicketsTable(tickets []ticket.Ticket) {
 			title = title[:32] + "..."
 		}
 
-		fmt.Printf("%-20s %-10s %-8s %-8t %-35s %-12s %-10s\n",
-			t.ID[:min(20, len(t.ID))],
+		fmt.Printf("%-20d %-10s %-8s %-8t %-35s %-12s %-10s\n",
+			t.ID,
 			t.Type,
 			t.Priority,
 			t.CriticalPath,
@@ -154,7 +154,7 @@ func printTicketsSummary(tickets []ticket.Ticket) {
 			fmt.Println()
 		}
 
-		fmt.Printf("ID: %s\n", t.ID)
+		fmt.Printf("ID: %d\n", t.ID)
 		fmt.Printf("Type: %s | Priority: %s | Status: %s\n", t.Type, t.Priority, t.Status)
 		fmt.Printf("Title: %s\n", t.Title)
 

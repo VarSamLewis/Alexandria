@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 	"alexandria/internal/database"
 	"alexandria/internal/ticket"
 
@@ -29,6 +30,16 @@ var deleteCmd = &cobra.Command{
 			return fmt.Errorf("project is required")
 		}
 
+		// Parse ID if provided
+		var ticketID int64
+		if deleteID != "" {
+			var err error
+			ticketID, err = strconv.ParseInt(deleteID, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid ID format: %s (must be a number)", deleteID)
+			}
+		}
+
 		// Get database connection
 		db := database.GetDB()
 		if db == nil {
@@ -39,13 +50,13 @@ var deleteCmd = &cobra.Command{
 		t := &ticket.Ticket{}
 
 		// Call the Delete method
-		if err := t.Delete(db, deleteProject, deleteID, deleteTitle); err != nil {
+		if err := t.Delete(db, deleteProject, ticketID, deleteTitle); err != nil {
 			return fmt.Errorf("failed to delete ticket: %w", err)
 		}
 
 		// Success message
-		if deleteID != "" {
-			fmt.Printf("Successfully deleted ticket with ID: %s from project: %s\n", deleteID, deleteProject)
+		if ticketID != 0 {
+			fmt.Printf("Successfully deleted ticket with ID: %d from project: %s\n", ticketID, deleteProject)
 		} else {
 			fmt.Printf("Successfully deleted ticket with title: %s from project: %s\n", deleteTitle, deleteProject)
 		}
