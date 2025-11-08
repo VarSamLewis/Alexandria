@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 	"alexandria/internal/database"
 	"alexandria/internal/ticket"
 	"strings"
@@ -41,6 +42,16 @@ var updateCmd = &cobra.Command{
 			return fmt.Errorf("project is required")
 		}
 
+		// Parse ID if provided
+		var ticketID int64
+		if updateID != "" {
+			var err error
+			ticketID, err = strconv.ParseInt(updateID, 10, 64)
+			if err != nil {
+				return fmt.Errorf("invalid ID format: %s (must be a number)", updateID)
+			}
+		}
+
 		// Get database connection
 		db := database.GetDB()
 		if db == nil {
@@ -57,7 +68,7 @@ var updateCmd = &cobra.Command{
 		// Find the ticket to update
 		var existingTicket *ticket.Ticket
 		for i := range tickets {
-			if updateID != "" && tickets[i].ID == updateID {
+			if ticketID != 0 && tickets[i].ID == ticketID {
 				existingTicket = &tickets[i]
 				break
 			} else if updateFindTitle != "" && tickets[i].Title == updateFindTitle {
@@ -67,8 +78,8 @@ var updateCmd = &cobra.Command{
 		}
 
 		if existingTicket == nil {
-			if updateID != "" {
-				return fmt.Errorf("ticket with ID '%s' not found", updateID)
+			if ticketID != 0 {
+				return fmt.Errorf("ticket with ID '%d' not found", ticketID)
 			}
 			return fmt.Errorf("ticket with title '%s' not found", updateFindTitle)
 		}
@@ -162,13 +173,13 @@ var updateCmd = &cobra.Command{
 		}
 
 		// Call the Update method
-		if err := existingTicket.Update(db, updateProject, updateID, updateFindTitle); err != nil {
+		if err := existingTicket.Update(db, updateProject, ticketID, updateFindTitle); err != nil {
 			return fmt.Errorf("failed to update ticket: %w", err)
 		}
 
 		// Success message
-		if updateID != "" {
-			fmt.Printf("Successfully updated ticket with ID: %s in project: %s\n", updateID, updateProject)
+		if ticketID != 0 {
+			fmt.Printf("Successfully updated ticket with ID: %d in project: %s\n", ticketID, updateProject)
 		} else {
 			fmt.Printf("Successfully updated ticket with title: %s in project: %s\n", updateFindTitle, updateProject)
 		}

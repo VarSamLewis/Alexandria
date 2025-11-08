@@ -5,7 +5,7 @@ import (
 )
 
 type Ticket struct {
-	ID          string    `json:"id"`
+	ID          int64     `json:"id"`
 	Type        Type      `json:"type"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
@@ -54,13 +54,6 @@ func (s Status) Valid() bool {
 	return false
 }
 
-type CriticalPath bool
-
-const (
-	CriticalPathTrue CriticalPath = true
-	CriticalPathFalse CriticalPath = false
-)
-
 // Priority represents the priority level of a ticket
 type Priority string
 
@@ -82,8 +75,8 @@ func (p Priority) Valid() bool {
 
 // Link represents a connection between two tickets
 type Link struct {
-	FromTicketID string    `json:"from_ticket_id"`
-	ToTicketID   string    `json:"to_ticket_id"`
+	FromTicketID int64     `json:"from_ticket_id"`
+	ToTicketID   int64     `json:"to_ticket_id"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

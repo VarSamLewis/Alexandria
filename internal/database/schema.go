@@ -27,7 +27,7 @@ func InitSchema(db *sql.DB) error {
 
 const createTicketsTable = `
 CREATE TABLE IF NOT EXISTS tickets (
-    id TEXT PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     project TEXT NOT NULL,
     type TEXT NOT NULL,
     title TEXT NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS tickets (
 
 const createTicketTagsTable = `
 CREATE TABLE IF NOT EXISTS ticket_tags (
-    ticket_id TEXT NOT NULL,
+    ticket_id INTEGER NOT NULL,
     tag TEXT NOT NULL,
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
     PRIMARY KEY (ticket_id, tag)
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS ticket_tags (
 const createTicketFilesTable = `
 CREATE TABLE IF NOT EXISTS ticket_files (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ticket_id TEXT NOT NULL,
+    ticket_id INTEGER NOT NULL,
     file_path TEXT NOT NULL,
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );`
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS ticket_files (
 const createTicketCommentsTable = `
 CREATE TABLE IF NOT EXISTS ticket_comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ticket_id TEXT NOT NULL,
+    ticket_id INTEGER NOT NULL,
     comment_text TEXT NOT NULL,
     created_at DATETIME NOT NULL,
     FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE

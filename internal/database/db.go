@@ -76,6 +76,7 @@ func getDefaultDBPath() (string, error) {
 }
 
 // GetDBPath returns the current database path (for informational purposes)
-func GetDBPath() (string, error) {
+/*func GetDBPath() (string, error) {
 	return getDefaultDBPath()
 }
+*/
