@@ -79,7 +79,7 @@ func (t *Ticket) Create(db *sql.DB, project string) error {
 }
 
 // Update modifies an existing ticket in the database
-func (t *Ticket) Update(db *sql.DB, id string, title string) error {
+func (t *Ticket) Update(db *sql.DB, project string, id string, title string) error {
 	// Start a transaction
 	tx, err := db.Begin()
 	if err != nil {
@@ -93,7 +93,7 @@ func (t *Ticket) Update(db *sql.DB, id string, title string) error {
 	if id != "" {
 		ticketID = id
 	} else if title != "" {
-		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ?", title).Scan(&ticketID)
+		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("no ticket found with title '%s'", title)
 		}
@@ -109,7 +109,7 @@ func (t *Ticket) Update(db *sql.DB, id string, title string) error {
 		UPDATE tickets SET
 			type = ?, title = ?, description = ?, critical_path = ?,
 			status = ?, priority = ?, assigned_to = ?, updated_at = ?
-		WHERE id = ?`
+		WHERE id = ? AND project = ?`
 
 	result, err := tx.Exec(
 		updateTicketQuery,
@@ -122,6 +122,7 @@ func (t *Ticket) Update(db *sql.DB, id string, title string) error {
 		t.AssignedTo,
 		time.Now(),
 		ticketID,
+		project,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to update ticket: %w", err)

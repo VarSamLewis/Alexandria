@@ -12,6 +12,7 @@ import (
 var (
 	updateID         string
 	updateFindTitle  string
+	updateProject    string
 	updateTitle      string
 	updateDesc       string
 	updateType       string
@@ -33,6 +34,11 @@ var updateCmd = &cobra.Command{
 		// Validate that at least one identifier is provided
 		if updateID == "" && updateFindTitle == "" {
 			return fmt.Errorf("either --id or --title must be provided to identify the ticket")
+		}
+
+		// Validate that project is provided
+		if updateProject == "" {
+			return fmt.Errorf("project is required")
 		}
 
 		// Get database connection
@@ -83,7 +89,7 @@ var updateCmd = &cobra.Command{
 		if updateStatus != "" {
 			tStatus := ticket.Status(updateStatus)
 			if !tStatus.Valid() {
-				return fmt.Errorf("invalid status: %s (must be: open, in_progress, resolved, or closed)", updateStatus)
+				return fmt.Errorf("invalid status: %s (must be: open, in-progress, or closed)", updateStatus)
 			}
 			existingTicket.Status = tStatus
 			hasUpdates = true
@@ -156,15 +162,15 @@ var updateCmd = &cobra.Command{
 		}
 
 		// Call the Update method
-		if err := existingTicket.Update(db, updateID, updateFindTitle); err != nil {
+		if err := existingTicket.Update(db, updateProject, updateID, updateFindTitle); err != nil {
 			return fmt.Errorf("failed to update ticket: %w", err)
 		}
 
 		// Success message
 		if updateID != "" {
-			fmt.Printf("Successfully updated ticket with ID: %s\n", updateID)
+			fmt.Printf("Successfully updated ticket with ID: %s in project: %s\n", updateID, updateProject)
 		} else {
-			fmt.Printf("Successfully updated ticket with title: %s\n", updateFindTitle)
+			fmt.Printf("Successfully updated ticket with title: %s in project: %s\n", updateFindTitle, updateProject)
 		}
 
 		return nil
@@ -177,12 +183,13 @@ func init() {
 	// Flags to identify the ticket
 	updateCmd.Flags().StringVarP(&updateID, "id", "i", "", "Ticket ID to update")
 	updateCmd.Flags().StringVarP(&updateFindTitle, "title", "t", "", "Find ticket by title to update")
+	updateCmd.Flags().StringVar(&updateProject, "project", "", "Project name (required)")
 
 	// Flags for fields to update
 	updateCmd.Flags().StringVar(&updateTitle, "new-title", "", "New title for the ticket")
 	updateCmd.Flags().StringVarP(&updateDesc, "description", "d", "", "New description for the ticket")
 	updateCmd.Flags().StringVar(&updateType, "type", "", "New type (bug, feature, task)")
-	updateCmd.Flags().StringVar(&updateStatus, "status", "", "New status (open, in_progress, resolved, closed)")
+	updateCmd.Flags().StringVar(&updateStatus, "status", "", "New status (open, in-progress, closed)")
 	updateCmd.Flags().StringVarP(&updatePriority, "priority", "p", "", "New priority (low, medium, high, undefined)")
 	updateCritical = updateCmd.Flags().BoolP("criticalpath", "c", false, "Mark ticket as critical path")
 	updateCmd.Flags().StringVarP(&updateAssignedTo, "assigned-to", "a", "", "Assign ticket to user")
@@ -190,4 +197,6 @@ func init() {
 	updateCmd.Flags().StringVar(&updateTags, "tags", "", "Comma-separated list of tags (replaces existing)")
 	updateCmd.Flags().StringVar(&updateFiles, "files", "", "Comma-separated list of file paths (replaces existing)")
 	updateCmd.Flags().StringVar(&updateComments, "comments", "", "Comma-separated list of comments to add")
+
+	updateCmd.MarkFlagRequired("project")
 }
