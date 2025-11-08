@@ -14,9 +14,9 @@ type Ticket struct {
 	Priority    Priority  `json:"priority"`
 	CreatedBy   *string   `json:"created_by,omitempty"`
 	AssignedTo  *string   `json:"assigned_to,omitempty"`
-	Tags        []string  `json:"tags,omitempty"`
-	Files       []string  `json:"files,omitempty"`
-	Comments    []string  `json:"comments,omitempty"`
+	Tags        []string  `json:"tags"`
+	Files       []string  `json:"files"`
+	Comments    []string  `json:"comments"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

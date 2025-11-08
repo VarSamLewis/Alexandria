@@ -315,7 +315,7 @@ func loadTags(db *sql.DB, ticketID int64) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var tags []string
+	tags := []string{}
 	for rows.Next() {
 		var tag string
 		if err := rows.Scan(&tag); err != nil {
@@ -335,7 +335,7 @@ func loadFiles(db *sql.DB, ticketID int64) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var files []string
+	files := []string{}
 	for rows.Next() {
 		var file string
 		if err := rows.Scan(&file); err != nil {
@@ -355,7 +355,7 @@ func loadComments(db *sql.DB, ticketID int64) ([]string, error) {
 	}
 	defer rows.Close()
 
-	var comments []string
+	comments := []string{}
 	for rows.Next() {
 		var comment string
 		if err := rows.Scan(&comment); err != nil {
@@ -411,3 +411,75 @@ func (t *Ticket) Delete(db *sql.DB, project string, id int64, title string) erro
 
       return tx.Commit()
   }
+
+func (t *Ticket) View(db *sql.DB, project string, id int64, title string) error {
+	// Start a transaction
+  tx, err := db.Begin()
+  if err != nil {
+      return fmt.Errorf("failed to begin transaction: %w", err)
+  }
+  defer tx.Rollback()
+  
+	var ticketID int64
+
+	if id != 0 {
+		ticketID = id 
+	} else if title != "" {
+		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("no ticket found with title '%s'", title)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to find ticket: %w", err)
+		}
+	} else {
+		  return fmt.Errorf("either id or title must be provided")
+	}
+	
+  query := `SELECT id, project, type, title, description, critical_path,
+                status, priority, created_by, assigned_to, created_at, updated_at
+                FROM tickets WHERE id = ? AND project = ?`
+
+  var project_name string
+	err = tx.QueryRow(query, ticketID, project).Scan(
+          &t.ID,
+          &project_name,
+          &t.Type,
+          &t.Title,
+          &t.Description,
+          &t.CriticalPath,
+          &t.Status,
+          &t.Priority,
+          &t.CreatedBy,
+          &t.AssignedTo,
+          &t.CreatedAt,
+          &t.UpdatedAt,
+  )
+  if err == sql.ErrNoRows {
+    return fmt.Errorf("ticket not found")
+  }
+  if err != nil {
+      return fmt.Errorf("failed to fetch ticket: %w", err)
+  }
+
+  // Load related data
+  tags, err := loadTags(db, ticketID)
+  if err != nil {
+     return err
+  }
+  t.Tags = tags
+
+  files, err := loadFiles(db, ticketID)
+  if err != nil {
+      return err
+  }
+  t.Files = files
+
+  comments, err := loadComments(db, ticketID)
+  if err != nil {
+      return err
+  }
+  t.Comments = comments
+	   
+	return tx.Commit()
+}
