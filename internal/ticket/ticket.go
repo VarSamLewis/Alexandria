@@ -6,6 +6,7 @@ import (
 
 type Ticket struct {
 	ID          int64     `json:"id"`
+	Project     string    `json:"project"`
 	Type        Type      `json:"type"`
 	Title       string    `json:"title"`
 	Description string    `json:"description"`
@@ -86,6 +87,7 @@ type Filters struct {
 	Type       *Type
 	Priority   *Priority
 	AssignedTo *string
+	Project    *string
 	Tags       []string
 }
 
