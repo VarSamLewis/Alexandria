@@ -16,6 +16,7 @@ var (
 	filterPriority   string
 	filterAssignedTo string
 	filterTags       string
+	filterProject    string
 	outputFormat     string
 )
 
@@ -59,6 +60,10 @@ var listCmd = &cobra.Command{
 
 		if filterAssignedTo != "" {
 			filters.AssignedTo = &filterAssignedTo
+		}
+
+		if filterProject != "" {
+			filters.Project = &filterProject
 		}
 
 		if filterTags != "" {
@@ -106,6 +111,7 @@ var listCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(listCmd)
 
+	listCmd.Flags().StringVar(&filterProject, "project", "", "Filter tickets by project")
 	listCmd.Flags().StringVar(&filterStatus, "status", "", "Filter by status (open, in-progress, closed)")
 	listCmd.Flags().StringVar(&filterType, "type", "", "Filter by type (bug, feature, task)")
 	listCmd.Flags().StringVar(&filterPriority, "priority", "", "Filter by priority (undefined, low, medium, high)")
@@ -117,9 +123,9 @@ func init() {
 // printTicketsTable prints tickets in a table format
 func printTicketsTable(tickets []ticket.Ticket) {
 	// Print header
-	fmt.Printf("%-20s %-10s %-8s %-8s %-35s %-12s %-10s\n",
-		"ID", "TYPE", "PRIORITY", "CRITICAL", "TITLE", "STATUS", "ASSIGNED TO")
-	fmt.Println(strings.Repeat("-", 115))
+	fmt.Printf("%-6s %-18s %-10s %-10s %-10s %-35s %-13s %-12s\n",
+		"ID", "PROJECT", "TYPE", "PRIORITY", "CRITICAL", "TITLE", "STATUS", "ASSIGNED TO")
+	fmt.Println(strings.Repeat("-", 114))
 
 	// Print rows
 	for _, t := range tickets {
@@ -134,8 +140,9 @@ func printTicketsTable(tickets []ticket.Ticket) {
 			title = title[:32] + "..."
 		}
 
-		fmt.Printf("%-20d %-10s %-8s %-8t %-35s %-12s %-10s\n",
+		fmt.Printf("%-6d %-18s %-10s %-10s %-10t %-35s %-13s %-12s\n",
 			t.ID,
+			t.Project,
 			t.Type,
 			t.Priority,
 			t.CriticalPath,

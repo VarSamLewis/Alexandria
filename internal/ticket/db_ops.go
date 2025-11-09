@@ -222,6 +222,11 @@ func List(db *sql.DB, filters Filters) ([]Ticket, error) {
 		args = append(args, *filters.AssignedTo)
 	}
 
+	if filters.Project != nil {
+		query += " AND t.project = ?"
+		args = append(args, *filters.Project)
+	}
+
 	// Filter by tags if provided
 	if len(filters.Tags) > 0 {
 		query += " AND tt.tag IN ("
@@ -248,11 +253,10 @@ func List(db *sql.DB, filters Filters) ([]Ticket, error) {
 
 	for rows.Next() {
 		var t Ticket
-		var project string
 
 		err := rows.Scan(
 			&t.ID,
-			&project,
+			&t.Project,
 			&t.Type,
 			&t.Title,
 			&t.Description,
@@ -440,10 +444,9 @@ func (t *Ticket) View(db *sql.DB, project string, id int64, title string) error 
                 status, priority, created_by, assigned_to, created_at, updated_at
                 FROM tickets WHERE id = ? AND project = ?`
 
-  var project_name string
 	err = tx.QueryRow(query, ticketID, project).Scan(
           &t.ID,
-          &project_name,
+          &t.Project,
           &t.Type,
           &t.Title,
           &t.Description,
