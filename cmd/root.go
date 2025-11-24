@@ -5,6 +5,7 @@ import (
 	"alexandria/internal/database"
 	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +14,9 @@ var rootCmd = &cobra.Command{
 	Short: "A simple ticket management CLI",
 	Long:  `A command-line tool for managing tickets and tasks.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Load .env file from project root (ignore error if file doesn't exist)
+		_ = godotenv.Load()
+
 		// Initialize database with default path
 		if err := database.Init(""); err != nil {
 			return fmt.Errorf("failed to initialize database: %w", err)
