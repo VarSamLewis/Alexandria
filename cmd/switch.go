@@ -12,14 +12,14 @@ import (
 var showStatus bool
 
 var switchCmd = &cobra.Command{
-	Use:   "switch [sqlite|turso]",
+	Use:   "source [sqlite|turso]",
 	Short: "Switch between SQLite and Turso databases",
 	Long: `Switch the active database between local SQLite and Turso cloud database.
 
 Examples:
-  alexandria switch sqlite   # Switch to local SQLite database
-  alexandria switch turso    # Switch to Turso cloud database
-  alexandria switch --status # Show current database configuration`,
+  alexandria source sqlite   # Switch to local SQLite database
+  alexandria source turso    # Switch to Turso cloud database
+  alexandria source --status # Show current database configuration`,
 	Args: func(cmd *cobra.Command, args []string) error {
 		if showStatus {
 			return nil

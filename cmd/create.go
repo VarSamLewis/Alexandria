@@ -115,6 +115,11 @@ func init() {
 	createCmd.Flags().StringVar(&createdBy, "created-by", "", "Ticket creator")
 	createCmd.Flags().StringVar(&tags, "tags", "", "Comma-separated list of tags")
 	createCmd.Flags().StringVar(&project, "project", "", "Project name (required)")
-	createCmd.MarkFlagRequired("title")
-	createCmd.MarkFlagRequired("project")
+	if err := createCmd.MarkFlagRequired("title"); err != nil {
+		panic(err)
+	}
+	if err := createCmd.MarkFlagRequired("project"); err != nil {
+		panic(err)
+	}
+
 }

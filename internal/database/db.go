@@ -14,6 +14,21 @@ import (
 
 var db *sql.DB
 
+// ConnectionFactory is a function that creates a database connection
+type ConnectionFactory func(dbPath string) (*sql.DB, error)
+
+// Registry of database connection factories
+var connectionFactories = map[string]ConnectionFactory{
+	config.DBTypeSQLite: newSQLiteConnection,
+	config.DBTypeTurso:  newTursoConnection,
+}
+
+// RegisterConnectionFactory allows registering new database types
+// This makes it easy to add support for PostgreSQL, MySQL, etc. later
+func RegisterConnectionFactory(dbType string, factory ConnectionFactory) {
+	connectionFactories[dbType] = factory
+}
+
 // Init initializes the database connection and creates the schema
 // It loads .env file, checks config for database type, and connects accordingly
 func Init(dbPath string) error {
@@ -26,18 +41,16 @@ func Init(dbPath string) error {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 
-	// Connect to appropriate database based on config
-	switch cfg.DatabaseType {
-	case config.DBTypeSQLite:
-		if err := initSQLite(dbPath); err != nil {
-			return err
-		}
-	case config.DBTypeTurso:
-		if err := initTurso(); err != nil {
-			return err
-		}
-	default:
-		return fmt.Errorf("unknown database type: %s", cfg.DatabaseType)
+	// Get the appropriate connection factory
+	factory, exists := connectionFactories[cfg.DatabaseType]
+	if !exists {
+		return fmt.Errorf("unsupported database type: %s", cfg.DatabaseType)
+	}
+
+	// Create the connection using the factory
+	db, err = factory(dbPath)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s database: %w", cfg.DatabaseType, err)
 	}
 
 	// Initialize schema
@@ -48,52 +61,53 @@ func Init(dbPath string) error {
 	return nil
 }
 
-// initSQLite initializes a local SQLite database connection
-func initSQLite(dbPath string) error {
+// newSQLiteConnection creates a new SQLite database connection
+func newSQLiteConnection(dbPath string) (*sql.DB, error) {
 	if dbPath == "" {
 		var err error
 		dbPath, err = getDefaultDBPath()
 		if err != nil {
-			return fmt.Errorf("failed to get default database path: %w", err)
+			return nil, fmt.Errorf("failed to get default database path: %w", err)
 		}
 	}
 
 	// Ensure the directory exists
 	dbDir := filepath.Dir(dbPath)
 	if err := os.MkdirAll(dbDir, 0755); err != nil {
-		return fmt.Errorf("failed to create database directory: %w", err)
+		return nil, fmt.Errorf("failed to create database directory: %w", err)
 	}
 
 	// Open database connection
-	var err error
-	db, err = sql.Open("sqlite3", dbPath)
+	conn, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
-		return fmt.Errorf("failed to open SQLite database: %w", err)
+		return nil, fmt.Errorf("failed to open SQLite database: %w", err)
 	}
 
 	// Test the connection
-	if err := db.Ping(); err != nil {
-		return fmt.Errorf("failed to ping SQLite database: %w", err)
+	if err := conn.Ping(); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("failed to ping SQLite database: %w", err)
 	}
 
 	// Enable foreign key constraints (disabled by default in SQLite)
-	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
-		return fmt.Errorf("failed to enable foreign keys: %w", err)
+	if _, err := conn.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
 
-	return nil
+	return conn, nil
 }
 
-// initTurso initializes a Turso database connection
-func initTurso() error {
+// newTursoConnection creates a new Turso database connection
+func newTursoConnection(dbPath string) (*sql.DB, error) {
 	tursoURL := os.Getenv("TURSO_URL")
 	tursoToken := os.Getenv("TURSO_AUTH_TOKEN")
 
 	if tursoURL == "" {
-		return fmt.Errorf("TURSO_URL environment variable is not set")
+		return nil, fmt.Errorf("TURSO_URL environment variable is not set")
 	}
 	if tursoToken == "" {
-		return fmt.Errorf("TURSO_AUTH_TOKEN environment variable is not set")
+		return nil, fmt.Errorf("TURSO_AUTH_TOKEN environment variable is not set")
 	}
 
 	// Construct the connection string for libsql
@@ -101,18 +115,18 @@ func initTurso() error {
 	connStr := fmt.Sprintf("%s?authToken=%s", tursoURL, tursoToken)
 
 	// Open database connection
-	var err error
-	db, err = sql.Open("libsql", connStr)
+	conn, err := sql.Open("libsql", connStr)
 	if err != nil {
-		return fmt.Errorf("failed to open Turso database: %w", err)
+		return nil, fmt.Errorf("failed to open Turso database: %w", err)
 	}
 
 	// Test the connection
-	if err := db.Ping(); err != nil {
-		return fmt.Errorf("failed to ping Turso database: %w", err)
+	if err := conn.Ping(); err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("failed to ping Turso database: %w", err)
 	}
 
-	return nil
+	return conn, nil
 }
 
 // GetDB returns the database connection

@@ -71,5 +71,8 @@ func init() {
 	deleteCmd.Flags().StringVarP(&deleteID, "id", "i", "", "Ticket ID to delete")
 	deleteCmd.Flags().StringVarP(&deleteTitle, "title", "t", "", "Ticket title to delete")
 	deleteCmd.Flags().StringVarP(&deleteProject, "project", "p", "", "Project name (required)")
-	deleteCmd.MarkFlagRequired("project")
+	if err := createCmd.MarkFlagRequired("project"); err != nil {
+		panic(err)
+	}
+
 }
