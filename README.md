@@ -248,5 +248,28 @@ Examples:
 
 **Warning:** This command will permanently delete the ticket and all related data including tags, files, and comments.
 
+### Switch Database Source
+
+```bash
+./Alexandria source [sqlite|turso]
+```
+
+Options:
+- `--status` - Show current database configuration
+
+**Note:** When switching to Turso, ensure `TURSO_URL` and `TURSO_AUTH_TOKEN` environment variables are set.
+
+Examples:
+```bash
+# Switch to local SQLite database
+./Alexandria source sqlite
+
+# Switch to Turso cloud database
+./Alexandria source turso
+
+# Show current database configuration
+./Alexandria source --status
+```
+
 ```
 
