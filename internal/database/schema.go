@@ -1,27 +1,36 @@
 package database
 
 import (
+	"alexandria/internal/logger"
 	"database/sql"
 	"fmt"
 )
 
 // InitSchema creates all necessary tables and indexes if they don't exist
 func InitSchema(db *sql.DB) error {
+	logger.Log.Debug("initializing database schema")
+
 	// Create tables in order (parent tables first, then child tables)
-	schemas := []string{
-		createTicketsTable,
-		createTicketTagsTable,
-		createTicketFilesTable,
-		createTicketCommentsTable,
-		createTicketsIndexes,
+	schemas := []struct {
+		name   string
+		script string
+	}{
+		{"tickets table", createTicketsTable},
+		{"ticket_tags table", createTicketTagsTable},
+		{"ticket_files table", createTicketFilesTable},
+		{"ticket_comments table", createTicketCommentsTable},
+		{"indexes", createTicketsIndexes},
 	}
 
 	for _, schema := range schemas {
-		if _, err := db.Exec(schema); err != nil {
+		logger.Log.Debug("creating schema", "name", schema.name)
+		if _, err := db.Exec(schema.script); err != nil {
+			logger.Log.Error("failed to execute schema", "error", err, "name", schema.name)
 			return fmt.Errorf("failed to execute schema: %w", err)
 		}
 	}
 
+	logger.Log.Debug("database schema initialized successfully")
 	return nil
 }
 
