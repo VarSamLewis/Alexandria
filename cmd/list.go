@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"alexandria/internal/database"
+	"alexandria/internal/logger"
+	"alexandria/internal/ticket"
 	"encoding/json"
 	"fmt"
-	"alexandria/internal/database"
-	"alexandria/internal/ticket"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -25,9 +26,12 @@ var listCmd = &cobra.Command{
 	Short: "List tickets from the database",
 	Long:  `List all tickets from the database with optional filtering by status, type, priority, assigned user, or tags.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logger.Log.Debug("listing tickets", "project", filterProject, "status", filterStatus, "type", filterType, "output", outputFormat)
+
 		// Get database connection
 		db := database.GetDB()
 		if db == nil {
+			logger.Log.Error("database not initialized")
 			return fmt.Errorf("database not initialized")
 		}
 
@@ -37,33 +41,41 @@ var listCmd = &cobra.Command{
 		if filterStatus != "" {
 			status := ticket.Status(filterStatus)
 			if !status.Valid() {
+				logger.Log.Error("validation failed", "error", "invalid status", "status", filterStatus)
 				return fmt.Errorf("invalid status: %s (must be: open, in-progress, or closed)", filterStatus)
 			}
 			filters.Status = &status
+			logger.Log.Debug("applying status filter", "status", status)
 		}
 
 		if filterType != "" {
 			tType := ticket.Type(filterType)
 			if !tType.Valid() {
+				logger.Log.Error("validation failed", "error", "invalid type", "type", filterType)
 				return fmt.Errorf("invalid type: %s (must be: bug, feature, or task)", filterType)
 			}
 			filters.Type = &tType
+			logger.Log.Debug("applying type filter", "type", tType)
 		}
 
 		if filterPriority != "" {
 			priority := ticket.Priority(filterPriority)
 			if !priority.Valid() {
+				logger.Log.Error("validation failed", "error", "invalid priority", "priority", filterPriority)
 				return fmt.Errorf("invalid priority: %s (must be: undefined, low, medium, or high)", filterPriority)
 			}
 			filters.Priority = &priority
+			logger.Log.Debug("applying priority filter", "priority", priority)
 		}
 
 		if filterAssignedTo != "" {
 			filters.AssignedTo = &filterAssignedTo
+			logger.Log.Debug("applying assigned_to filter", "assigned_to", filterAssignedTo)
 		}
 
 		if filterProject != "" {
 			filters.Project = &filterProject
+			logger.Log.Debug("applying project filter", "project", filterProject)
 		}
 
 		if filterTags != "" {
@@ -72,24 +84,32 @@ var listCmd = &cobra.Command{
 				tagList[i] = strings.TrimSpace(tag)
 			}
 			filters.Tags = tagList
+			logger.Log.Debug("applying tags filter", "count", len(tagList))
 		}
 
 		// Query tickets
+		logger.Log.Debug("querying tickets with filters")
 		tickets, err := ticket.List(db, filters)
 		if err != nil {
+			logger.Log.Error("failed to list tickets", "error", err)
 			return fmt.Errorf("failed to list tickets: %w", err)
 		}
 
+		logger.Log.Info("tickets retrieved", "count", len(tickets))
+
 		if len(tickets) == 0 {
+			logger.Log.Debug("no tickets found")
 			fmt.Println("No tickets found.")
 			return nil
 		}
 
 		// Output based on format
+		logger.Log.Debug("formatting output", "format", outputFormat, "count", len(tickets))
 		switch outputFormat {
 		case "json":
 			jsonData, err := json.MarshalIndent(tickets, "", "  ")
 			if err != nil {
+				logger.Log.Error("failed to marshal tickets", "error", err)
 				return fmt.Errorf("failed to marshal tickets: %w", err)
 			}
 			fmt.Println(string(jsonData))
@@ -101,6 +121,7 @@ var listCmd = &cobra.Command{
 			printTicketsSummary(tickets)
 
 		default:
+			logger.Log.Error("invalid output format", "format", outputFormat)
 			return fmt.Errorf("invalid output format: %s (must be: json, table, or summary)", outputFormat)
 		}
 
@@ -200,10 +221,4 @@ func printTicketsSummary(tickets []ticket.Ticket) {
 	fmt.Printf("\nTotal: %d ticket(s)\n", len(tickets))
 }
 
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
+

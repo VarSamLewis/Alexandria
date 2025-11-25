@@ -37,6 +37,10 @@ docker run  -v alexandria-data:/root/work/DB/Alexandria alexandria create \
 # List tickets
 docker run -v alexandria-data:/root/work/DB/Alexandria alexandria list
 
+# View a ticket
+docker run -v alexandria-data:/root/work/DB/Alexandria alexandria view \
+  --project "Alexandria" --id "1762471479992286465"
+
 # Update a ticket
 docker run -v alexandria-data:/root/work/DB/Alexandria alexandria update \
   --project "Alexandria" --id "1762471479992286465" --status "in-progress" --priority high
@@ -53,6 +57,7 @@ The repository includes a `docker-compose.yml` file. To use it:
 # Build and run
 docker-compose run  alexandria create --title "New ticket" --project "Alexandria"
 docker-compose run  alexandria list
+docker-compose run  alexandria view --project "Alexandria" --id "123"
 docker-compose run  alexandria update --project "Alexandria" --id "123" --status "in-progress"
 ```
 
@@ -74,6 +79,7 @@ Then you can use:
 ```bash
 Alexandria create --title "My task" --project "Alexandria"
 Alexandria list
+Alexandria view --project "Alexandria" --id "123"
 Alexandria update --project "Alexandria" --id "123" --status "in-progress"
 Alexandria delete --project "Alexandria" --id "123"
 ```
@@ -133,6 +139,33 @@ Examples:
 # List tickets with specific tags
 ./Alexandria list --tags "security,urgent"
 ```
+
+### View a Ticket
+
+```bash
+./Alexandria view --project "ProjectName" [--id ID | --title "Ticket Title"]
+```
+
+Options:
+- `--project, -p` - Project name (required)
+- `--id, -i` - Ticket ID to view
+- `--title, -t` - Ticket title to view
+
+**Note:** Either `--id` or `--title` must be provided (not both).
+
+Examples:
+```bash
+# View ticket by ID
+./Alexandria view --project "Alexandria" --id "1699564789123456789"
+
+# View ticket by title
+./Alexandria view --project "Alexandria" --title "Fix login bug"
+
+# Using short flags
+./Alexandria view -p "Alexandria" -i "1699564789123456789"
+```
+
+The command outputs the full ticket details in JSON format, including all fields, tags, files, and comments.
 
 ### Update a Ticket
 

@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"alexandria/internal/database"
+	"alexandria/internal/logger"
+	"alexandria/internal/ticket"
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"alexandria/internal/database"
-	"alexandria/internal/ticket"
 
 	"github.com/spf13/cobra"
 )
@@ -21,13 +22,17 @@ var viewCmd = &cobra.Command{
 	Short: "View a single ticket's details",
 	Long:  `View the full details of a ticket by ID or title.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		logger.Log.Debug("viewing ticket", "id", viewID, "title", viewTitle, "project", viewProject)
+
 		// Validate that at least one identifier is provided
 		if viewID == "" && viewTitle == "" {
+			logger.Log.Error("validation failed", "error", "no identifier provided")
 			return fmt.Errorf("either --id or --title must be provided")
 		}
 
 		// Validate that project is provided
 		if viewProject == "" {
+			logger.Log.Error("validation failed", "error", "project is required")
 			return fmt.Errorf("project is required")
 		}
 
@@ -37,13 +42,16 @@ var viewCmd = &cobra.Command{
 			var err error
 			ticketID, err = strconv.ParseInt(viewID, 10, 64)
 			if err != nil {
+				logger.Log.Error("failed to parse ticket ID", "error", err, "id", viewID)
 				return fmt.Errorf("invalid ID format: %s (must be a number)", viewID)
 			}
+			logger.Log.Debug("parsed ticket ID", "id", ticketID)
 		}
 
 		// Get database connection
 		db := database.GetDB()
 		if db == nil {
+			logger.Log.Error("database not initialized")
 			return fmt.Errorf("database not initialized")
 		}
 
@@ -51,13 +59,18 @@ var viewCmd = &cobra.Command{
 		t := &ticket.Ticket{}
 
 		// Call the View method
+		logger.Log.Debug("calling view method", "project", viewProject, "id", ticketID, "title", viewTitle)
 		if err := t.View(db, viewProject, ticketID, viewTitle); err != nil {
+			logger.Log.Error("failed to view ticket", "error", err, "project", viewProject)
 			return fmt.Errorf("failed to view ticket: %w", err)
 		}
+
+		logger.Log.Info("ticket retrieved successfully", "id", t.ID, "title", t.Title)
 
 		// Output as JSON
 		jsonData, err := json.MarshalIndent(t, "", "  ")
 		if err != nil {
+			logger.Log.Error("failed to marshal ticket", "error", err)
 			return fmt.Errorf("failed to marshal ticket: %w", err)
 		}
 
