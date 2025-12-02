@@ -19,6 +19,7 @@ func InitSchema(db *sql.DB) error {
 		{"ticket_tags table", createTicketTagsTable},
 		{"ticket_files table", createTicketFilesTable},
 		{"ticket_comments table", createTicketCommentsTable},
+		{"users table", createUsersTable}
 		{"indexes", createTicketsIndexes},
 	}
 
@@ -54,7 +55,7 @@ const createTicketTagsTable = `
 CREATE TABLE IF NOT EXISTS ticket_tags (
     ticket_id INTEGER NOT NULL,
     tag TEXT NOT NULL,
-    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
+		FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE,
     PRIMARY KEY (ticket_id, tag)
 );`
 
@@ -72,11 +73,27 @@ CREATE TABLE IF NOT EXISTS ticket_comments (
     ticket_id INTEGER NOT NULL,
     comment_text TEXT NOT NULL,
     created_at DATETIME NOT NULL,
-    FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
+		FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE:w http.ResponseWriter, r *http.Request
 );`
+
+const createUsersTable = `
+  CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      hashed_password TEXT NOT NULL,
+      fullname TEXT NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('admin', 'user', 'viewer')) DEFAULT 'user',
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);`
+
 
 const createTicketsIndexes = `
 CREATE INDEX IF NOT EXISTS idx_tickets_project ON tickets(project);
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
 CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority);
-CREATE INDEX IF NOT EXISTS idx_tickets_type ON tickets(type);`
+CREATE INDEX IF NOT EXISTS idx_tickets_type ON tickets(type);
+CREATE INDEX IF NOT EXISTS idx_tickets_type ON tickets(type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users(LOWER(email));`
