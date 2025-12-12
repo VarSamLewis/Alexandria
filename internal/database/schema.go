@@ -19,7 +19,7 @@ func InitSchema(db *sql.DB) error {
 		{"ticket_tags table", createTicketTagsTable},
 		{"ticket_files table", createTicketFilesTable},
 		{"ticket_comments table", createTicketCommentsTable},
-		{"users table", createUsersTable}
+		{"users table", createUsersTable},
 		{"indexes", createTicketsIndexes},
 	}
 
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS ticket_comments (
     ticket_id INTEGER NOT NULL,
     comment_text TEXT NOT NULL,
     created_at DATETIME NOT NULL,
-		FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE:w http.ResponseWriter, r *http.Request
+		FOREIGN KEY (ticket_id) REFERENCES tickets(id) ON DELETE CASCADE
 );`
 
 const createUsersTable = `

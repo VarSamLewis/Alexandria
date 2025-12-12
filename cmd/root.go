@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
+	"github.com/common-nighthawk/go-figure"
 )
 
 var verbose bool
@@ -16,6 +17,13 @@ var rootCmd = &cobra.Command{
 	Use:   "alexandria",
 	Short: "A simple ticket management CLI",
 	Long:  `A command-line tool for managing tickets and tasks.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Show banner only when running root command with no arguments
+		myBanner := figure.NewFigure("Alexandria", "", true)
+		myBanner.Print()
+		fmt.Println() // blank line for spacing
+		cmd.Help()
+	},
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Initialize logger based on verbose flag
 		logger.Init(verbose)
@@ -37,6 +45,7 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "Enable verbose logging")
 }
 
