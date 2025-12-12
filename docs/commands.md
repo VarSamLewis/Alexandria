@@ -259,11 +259,9 @@ alexandria source [sqlite|turso]
 **Options:**
 - `--status` - Show current database configuration
 
-**Note:** When switching to Turso, ensure `TURSO_URL` and `TURSO_AUTH_TOKEN` environment variables are set.
-
 **Examples:**
 ```bash
-# Switch to local SQLite database
+# Switch to local SQLite database (default)
 alexandria source sqlite
 
 # Switch to Turso cloud database
@@ -271,4 +269,73 @@ alexandria source turso
 
 # Show current database configuration
 alexandria source --status
+```
+
+#### Setting up Turso Database
+
+To use Turso cloud database, you need to configure environment variables.
+
+**1. Create a `.env` file from the example:**
+```bash
+cp .env.example .env
+```
+
+**2. Install Turso CLI (if not already installed):**
+```bash
+# macOS/Linux
+curl -sSfL https://get.tur.so/install.sh | bash
+
+# Or using Homebrew
+brew install tursodatabase/tap/turso
+```
+
+**3. Authenticate with Turso:**
+```bash
+turso auth login
+```
+
+**4. Create a database (or use existing):**
+```bash
+# Create a new database
+turso db create alexandria
+
+# List existing databases
+turso db list
+```
+
+**5. Get your database credentials:**
+```bash
+# Get database URL
+turso db show alexandria
+
+# Create an authentication token
+turso db tokens create alexandria
+```
+
+**6. Update your `.env` file:**
+```bash
+TURSO_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-token-here
+```
+
+**7. Switch Alexandria to use Turso:**
+```bash
+# Make sure your .env is loaded (or export the variables)
+source .env  # or: export TURSO_URL=... && export TURSO_AUTH_TOKEN=...
+
+# Switch to Turso
+alexandria source turso
+```
+
+**Alternative - Set environment variables permanently:**
+
+Add to your `~/.bashrc` or `~/.zshrc`:
+```bash
+export TURSO_URL="libsql://your-db.turso.io"
+export TURSO_AUTH_TOKEN="your-token-here"
+```
+
+Then reload your shell:
+```bash
+source ~/.bashrc  # or source ~/.zshrc
 ```
