@@ -23,16 +23,10 @@ var deleteCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger.Log.Debug("deleting ticket", "id", deleteID, "title", deleteTitle, "project", deleteProject)
 
-		// Validate that at least one identifier is provided
+		// Require that at least one identifier is provided
 		if deleteID == "" && deleteTitle == "" {
 			logger.Log.Error("validation failed", "error", "no identifier provided")
 			return fmt.Errorf("either --id or --title must be provided")
-		}
-
-		// Validate that project is provided
-		if deleteProject == "" {
-			logger.Log.Error("validation failed", "error", "project is required")
-			return fmt.Errorf("project is required")
 		}
 
 		// Parse ID if provided
@@ -80,11 +74,7 @@ var deleteCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(deleteCmd)
 
-	deleteCmd.Flags().StringVarP(&deleteID, "id", "i", "", "Ticket ID to delete")
-	deleteCmd.Flags().StringVarP(&deleteTitle, "title", "t", "", "Ticket title to delete")
-	deleteCmd.Flags().StringVarP(&deleteProject, "project", "p", "", "Project name (required)")
-	if err := createCmd.MarkFlagRequired("project"); err != nil {
-		panic(err)
-	}
-
+	deleteCmd.Flags().StringVarP(&deleteID, "id", "i", "", "Ticket ID to delete (required if title not provided)")
+	deleteCmd.Flags().StringVarP(&deleteTitle, "title", "t", "", "Ticket title to delete (required if ID not provided)")
+	deleteCmd.Flags().StringVarP(&deleteProject, "project", "p", "", "Project name (optional filter)")
 }

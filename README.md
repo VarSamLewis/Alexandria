@@ -37,13 +37,13 @@ alexandria create --title "Fix login bug" --project "MyProject" --type bug --pri
 alexandria list
 
 # View a ticket
-alexandria view --project "MyProject" --id "1699564789123456789"
+alexandria view --id "1699564789123456789"
 
 # Update a ticket
-alexandria update --project "MyProject" --id "1699564789123456789" --status "in-progress"
+alexandria update --id "1699564789123456789" --status "in-progress"
 
 # Delete a ticket
-alexandria delete --project "MyProject" --id "1699564789123456789"
+alexandria delete --id "1699564789123456789"
 ```
 
 ## Documentation

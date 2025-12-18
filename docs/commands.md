@@ -23,15 +23,15 @@ docker run -v alexandria-data:/root/work/DB/Alexandria alexandria list
 
 # View a ticket
 docker run -v alexandria-data:/root/work/DB/Alexandria alexandria view \
-  --project "Alexandria" --id "1762471479992286465"
+  --id "1762471479992286465"
 
 # Update a ticket
 docker run -v alexandria-data:/root/work/DB/Alexandria alexandria update \
-  --project "Alexandria" --id "1762471479992286465" --status "in-progress" --priority high
+  --id "1762471479992286465" --status "in-progress" --priority high
 
 # Delete a ticket
 docker run -v alexandria-data:/root/work/DB/Alexandria alexandria delete \
-  --project "Alexandria" --id "1762471479992286465"
+  --id "1762471479992286465"
 ```
 
 **Using docker-compose:**
@@ -41,8 +41,8 @@ The repository includes a `docker-compose.yml` file. To use it:
 # Build and run
 docker-compose run alexandria create --title "New ticket" --project "Alexandria"
 docker-compose run alexandria list
-docker-compose run alexandria view --project "Alexandria" --id "123"
-docker-compose run alexandria update --project "Alexandria" --id "123" --status "in-progress"
+docker-compose run alexandria view --id "123"
+docker-compose run alexandria update --id "123" --status "in-progress"
 ```
 
 **Shell Alias (optional convenience):**
@@ -63,9 +63,9 @@ Then you can use:
 ```bash
 Alexandria create --title "My task" --project "Alexandria"
 Alexandria list
-Alexandria view --project "Alexandria" --id "123"
-Alexandria update --project "Alexandria" --id "123" --status "in-progress"
-Alexandria delete --project "Alexandria" --id "123"
+Alexandria view --id "123"
+Alexandria update --id "123" --status "in-progress"
+Alexandria delete --id "123"
 ```
 
 ### Running Locally with Go Build
@@ -145,26 +145,32 @@ alexandria list --tags "security,urgent"
 ### View a Ticket
 
 ```bash
-alexandria view --project "ProjectName" [--id ID | --title "Ticket Title"]
+alexandria view [--id ID | --title "Ticket Title"] [--project "ProjectName"]
 ```
 
 **Options:**
-- `--project, -p` - Project name (required)
-- `--id, -i` - Ticket ID to view
-- `--title, -t` - Ticket title to view
+- `--id, -i` - Ticket ID to view (required if title not provided)
+- `--title, -t` - Ticket title to view (required if ID not provided)
+- `--project, -p` - Project name (optional filter)
 
-**Note:** Either `--id` or `--title` must be provided (not both).
+**Note:** Either `--id` or `--title` must be provided.
 
 **Examples:**
 ```bash
 # View ticket by ID
-alexandria view --project "Alexandria" --id "1699564789123456789"
+alexandria view --id "1699564789123456789"
 
 # View ticket by title
-alexandria view --project "Alexandria" --title "Fix login bug"
+alexandria view --title "Fix login bug"
+
+# View ticket by ID with project filter (more precise if IDs might overlap)
+alexandria view --id "1699564789123456789" --project "Alexandria"
+
+# View ticket by title with project filter (recommended when titles might not be unique)
+alexandria view --title "Fix login bug" --project "Alexandria"
 
 # Using short flags
-alexandria view -p "Alexandria" -i "1699564789123456789"
+alexandria view -i "1699564789123456789" -p "Alexandria"
 ```
 
 The command outputs the full ticket details in JSON format, including all fields, tags, files, and comments.
@@ -172,13 +178,13 @@ The command outputs the full ticket details in JSON format, including all fields
 ### Update a Ticket
 
 ```bash
-alexandria update --project "ProjectName" [--id ID | --title "Ticket Title"] [options]
+alexandria update [--id ID | --title "Ticket Title"] [--project "ProjectName"] [options]
 ```
 
 **Options:**
-- `--project` - Project name (required)
-- `--id, -i` - Ticket ID to update
-- `--title, -t` - Find ticket by title to update
+- `--id, -i` - Ticket ID to update (required if title not provided)
+- `--title, -t` - Find ticket by title to update (required if ID not provided)
+- `--project` - Project name (optional filter)
 - `--new-title` - New title for the ticket
 - `--description, -d` - New description for the ticket
 - `--type` - New type: bug, feature, task
@@ -191,30 +197,33 @@ alexandria update --project "ProjectName" [--id ID | --title "Ticket Title"] [op
 - `--files` - Comma-separated list of file paths (replaces existing)
 - `--comments` - Comma-separated list of comments to add
 
-**Note:** `--project`, and either `--id` or `--title` must be provided to identify the ticket. At least one field to update must be specified.
+**Note:** Either `--id` or `--title` must be provided to identify the ticket. At least one field to update must be specified.
 
 **Examples:**
 ```bash
 # Update ticket status by ID
-alexandria update --project "Alexandria" --id "1699564789123456789" --status "in-progress"
+alexandria update --id "1699564789123456789" --status "in-progress"
 
 # Update multiple fields by title
-alexandria update --project "Alexandria" --title "Fix login bug" --status "closed" --priority high
+alexandria update --title "Fix login bug" --status "closed" --priority high
+
+# Update with project filter for precision
+alexandria update --id "1699564789123456789" --project "Alexandria" --status "in-progress"
 
 # Change ticket assignment and add tags
-alexandria update --project "Alexandria" --id "1699564789123456789" --assigned-to "john@example.com" --tags "security,urgent,reviewed"
+alexandria update --id "1699564789123456789" --assigned-to "john@example.com" --tags "security,urgent,reviewed"
 
 # Update description and mark as critical
-alexandria update --project "Alexandria" --id "1699564789123456789" --description "Updated requirements" --criticalpath
+alexandria update --id "1699564789123456789" --description "Updated requirements" --criticalpath
 
 # Add comments to a ticket
-alexandria update --project "Alexandria" --id "1699564789123456789" --comments "Fixed in PR #123,Ready for review"
+alexandria update --id "1699564789123456789" --comments "Fixed in PR #123,Ready for review"
 
-# Change the ticket title
-alexandria update --project "Alexandria" --title "Fix login bug" --new-title "Fix authentication issue"
+# Change the ticket title with project filter (recommended for title lookups)
+alexandria update --title "Fix login bug" --project "Alexandria" --new-title "Fix authentication issue"
 
 # Using short flags
-alexandria update --project "Alexandria" -i "1699564789123456789" -a "jane@example.com" -p high
+alexandria update -i "1699564789123456789" -a "jane@example.com" -p high
 ```
 
 **Behavior:**
@@ -226,29 +235,35 @@ alexandria update --project "Alexandria" -i "1699564789123456789" -a "jane@examp
 ### Delete a Ticket
 
 ```bash
-alexandria delete --project "ProjectName" [--id ID | --title "Ticket Title"]
+alexandria delete [--id ID | --title "Ticket Title"] [--project "ProjectName"]
 ```
 
 **Options:**
-- `--project, -p` - Project name (required)
-- `--id, -i` - Ticket ID to delete
-- `--title, -t` - Ticket title to delete
+- `--id, -i` - Ticket ID to delete (required if title not provided)
+- `--title, -t` - Ticket title to delete (required if ID not provided)
+- `--project, -p` - Project name (optional filter)
 
-**Note:** Either `--id` or `--title` must be provided (not both).
+**Note:** Either `--id` or `--title` must be provided.
 
 **Examples:**
 ```bash
 # Delete by ID
-alexandria delete --project "Alexandria" --id "1699564789123456789"
+alexandria delete --id "1699564789123456789"
 
 # Delete by title
-alexandria delete --project "Alexandria" --title "Fix login bug"
+alexandria delete --title "Fix login bug"
+
+# Delete with project filter (recommended for safer deletion)
+alexandria delete --id "1699564789123456789" --project "Alexandria"
+
+# Delete by title with project filter (highly recommended to avoid deleting wrong ticket)
+alexandria delete --title "Fix login bug" --project "Alexandria"
 
 # Using short flags
-alexandria delete -p "Alexandria" -i "1699564789123456789"
+alexandria delete -i "1699564789123456789" -p "Alexandria"
 ```
 
-**Warning:** This command will permanently delete the ticket and all related data including tags, files, and comments.
+**Warning:** This command will permanently delete the ticket and all related data including tags, files, and comments. When using title-based deletion without a project filter, the first matching ticket will be deleted. It's strongly recommended to use the `--project` filter for safer deletions.
 
 ### Switch Database Source
 

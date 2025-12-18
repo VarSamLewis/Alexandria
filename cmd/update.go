@@ -35,16 +35,10 @@ var updateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger.Log.Debug("updating ticket", "id", updateID, "title", updateFindTitle, "project", updateProject)
 
-		// Validate that at least one identifier is provided
+		// Require that at least one identifier is provided
 		if updateID == "" && updateFindTitle == "" {
 			logger.Log.Error("validation failed", "error", "no identifier provided")
 			return fmt.Errorf("either --id or --title must be provided to identify the ticket")
-		}
-
-		// Validate that project is provided
-		if updateProject == "" {
-			logger.Log.Error("validation failed", "error", "project is required")
-			return fmt.Errorf("project is required")
 		}
 
 		// Parse ID if provided
@@ -225,9 +219,9 @@ func init() {
 	rootCmd.AddCommand(updateCmd)
 
 	// Flags to identify the ticket
-	updateCmd.Flags().StringVarP(&updateID, "id", "i", "", "Ticket ID to update")
-	updateCmd.Flags().StringVarP(&updateFindTitle, "title", "t", "", "Find ticket by title to update")
-	updateCmd.Flags().StringVar(&updateProject, "project", "", "Project name (required)")
+	updateCmd.Flags().StringVarP(&updateID, "id", "i", "", "Ticket ID to update (required if title not provided)")
+	updateCmd.Flags().StringVarP(&updateFindTitle, "title", "t", "", "Find ticket by title to update (required if ID not provided)")
+	updateCmd.Flags().StringVar(&updateProject, "project", "", "Project name (optional filter)")
 
 	// Flags for fields to update
 	updateCmd.Flags().StringVar(&updateTitle, "new-title", "", "New title for the ticket")
@@ -241,6 +235,4 @@ func init() {
 	updateCmd.Flags().StringVar(&updateTags, "tags", "", "Comma-separated list of tags (replaces existing)")
 	updateCmd.Flags().StringVar(&updateFiles, "files", "", "Comma-separated list of file paths (replaces existing)")
 	updateCmd.Flags().StringVar(&updateComments, "comments", "", "Comma-separated list of comments to add")
-
-	updateCmd.MarkFlagRequired("project")
 }

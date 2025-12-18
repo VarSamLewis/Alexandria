@@ -121,7 +121,18 @@ func (t *Ticket) Update(db *sql.DB, project string, id int64, title string) erro
 		logger.Log.Debug("using ID to find ticket", "id", ticketID)
 	} else if title != "" {
 		logger.Log.Debug("looking up ticket by title", "title", title)
-		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)
+		var titleQuery string
+		var args []interface{}
+
+		if project != "" {
+			titleQuery = "SELECT id FROM tickets WHERE title = ? AND project = ?"
+			args = []interface{}{title, project}
+		} else {
+			titleQuery = "SELECT id FROM tickets WHERE title = ?"
+			args = []interface{}{title}
+		}
+
+		err = tx.QueryRow(titleQuery, args...).Scan(&ticketID)
 		if err == sql.ErrNoRows {
 			logger.Log.Error("ticket not found", "title", title, "project", project)
 			return fmt.Errorf("no ticket found with title '%s'", title)
@@ -137,26 +148,48 @@ func (t *Ticket) Update(db *sql.DB, project string, id int64, title string) erro
 	}
 
 	// Update the main ticket record
-	updateTicketQuery := `
-		UPDATE tickets SET
-			type = ?, title = ?, description = ?, critical_path = ?,
-			status = ?, priority = ?, assigned_to = ?, updated_at = ?
-		WHERE id = ? AND project = ?`
+	var updateTicketQuery string
+	var updateArgs []interface{}
+
+	if project != "" {
+		updateTicketQuery = `
+			UPDATE tickets SET
+				type = ?, title = ?, description = ?, critical_path = ?,
+				status = ?, priority = ?, assigned_to = ?, updated_at = ?
+			WHERE id = ? AND project = ?`
+		updateArgs = []interface{}{
+			t.Type,
+			t.Title,
+			t.Description,
+			t.CriticalPath,
+			t.Status,
+			t.Priority,
+			t.AssignedTo,
+			time.Now(),
+			ticketID,
+			project,
+		}
+	} else {
+		updateTicketQuery = `
+			UPDATE tickets SET
+				type = ?, title = ?, description = ?, critical_path = ?,
+				status = ?, priority = ?, assigned_to = ?, updated_at = ?
+			WHERE id = ?`
+		updateArgs = []interface{}{
+			t.Type,
+			t.Title,
+			t.Description,
+			t.CriticalPath,
+			t.Status,
+			t.Priority,
+			t.AssignedTo,
+			time.Now(),
+			ticketID,
+		}
+	}
 
 	logger.Log.Debug("executing update query", "ticket_id", ticketID)
-	result, err := tx.Exec(
-		updateTicketQuery,
-		t.Type,
-		t.Title,
-		t.Description,
-		t.CriticalPath,
-		t.Status,
-		t.Priority,
-		t.AssignedTo,
-		time.Now(),
-		ticketID,
-		project,
-	)
+	result, err := tx.Exec(updateTicketQuery, updateArgs...)
 	if err != nil {
 		logger.Log.Error("failed to update ticket", "error", err)
 		return fmt.Errorf("failed to update ticket: %w", err)
@@ -468,7 +501,18 @@ func (t *Ticket) Delete(db *sql.DB, project string, id int64, title string) erro
 	if id != 0 {
 		ticketID = id
 	} else if title != "" {
-		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)
+		var titleQuery string
+		var args []interface{}
+
+		if project != "" {
+			titleQuery = "SELECT id FROM tickets WHERE title = ? AND project = ?"
+			args = []interface{}{title, project}
+		} else {
+			titleQuery = "SELECT id FROM tickets WHERE title = ?"
+			args = []interface{}{title}
+		}
+
+		err = tx.QueryRow(titleQuery, args...).Scan(&ticketID)
 		if err == sql.ErrNoRows {
 			logger.Log.Error("ticket not found", "title", title, "project", project)
 			return fmt.Errorf("no ticket found with title '%s'", title)
@@ -500,7 +544,18 @@ func (t *Ticket) Delete(db *sql.DB, project string, id int64, title string) erro
 		return fmt.Errorf("failed to delete comments: %w", err)
 	}
 
-	if _, err := tx.Exec("DELETE FROM tickets WHERE id = ? AND project = ?", ticketID, project); err != nil {
+	var deleteQuery string
+	var deleteArgs []interface{}
+
+	if project != "" {
+		deleteQuery = "DELETE FROM tickets WHERE id = ? AND project = ?"
+		deleteArgs = []interface{}{ticketID, project}
+	} else {
+		deleteQuery = "DELETE FROM tickets WHERE id = ?"
+		deleteArgs = []interface{}{ticketID}
+	}
+
+	if _, err := tx.Exec(deleteQuery, deleteArgs...); err != nil {
 		logger.Log.Error("failed to delete ticket record", "error", err)
 		return fmt.Errorf("failed to delete ticket: %w", err)
 	}
@@ -532,7 +587,18 @@ func (t *Ticket) View(db *sql.DB, project string, id int64, title string) error 
 		logger.Log.Debug("using provided ID", "id", ticketID)
 	} else if title != "" {
 		logger.Log.Debug("resolving ticket by title", "title", title, "project", project)
-		err = tx.QueryRow("SELECT id FROM tickets WHERE title = ? AND project = ?", title, project).Scan(&ticketID)
+		var titleQuery string
+		var args []interface{}
+
+		if project != "" {
+			titleQuery = "SELECT id FROM tickets WHERE title = ? AND project = ?"
+			args = []interface{}{title, project}
+		} else {
+			titleQuery = "SELECT id FROM tickets WHERE title = ?"
+			args = []interface{}{title}
+		}
+
+		err = tx.QueryRow(titleQuery, args...).Scan(&ticketID)
 		if err == sql.ErrNoRows {
 			logger.Log.Error("ticket not found by title", "title", title, "project", project)
 			return fmt.Errorf("no ticket found with title '%s'", title)
@@ -548,11 +614,22 @@ func (t *Ticket) View(db *sql.DB, project string, id int64, title string) error 
 	}
 
 	logger.Log.Debug("fetching ticket from database", "id", ticketID, "project", project)
-	query := `SELECT id, project, type, title, description, critical_path,
+	var query string
+	var queryArgs []interface{}
+
+	if project != "" {
+		query = `SELECT id, project, type, title, description, critical_path,
                 status, priority, created_by, assigned_to, created_at, updated_at
                 FROM tickets WHERE id = ? AND project = ?`
+		queryArgs = []interface{}{ticketID, project}
+	} else {
+		query = `SELECT id, project, type, title, description, critical_path,
+                status, priority, created_by, assigned_to, created_at, updated_at
+                FROM tickets WHERE id = ?`
+		queryArgs = []interface{}{ticketID}
+	}
 
-	err = tx.QueryRow(query, ticketID, project).Scan(
+	err = tx.QueryRow(query, queryArgs...).Scan(
 		&t.ID,
 		&t.Project,
 		&t.Type,
