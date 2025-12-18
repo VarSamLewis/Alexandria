@@ -24,16 +24,10 @@ var viewCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger.Log.Debug("viewing ticket", "id", viewID, "title", viewTitle, "project", viewProject)
 
-		// Validate that at least one identifier is provided
+		// Require that at least one identifier is provided
 		if viewID == "" && viewTitle == "" {
 			logger.Log.Error("validation failed", "error", "no identifier provided")
 			return fmt.Errorf("either --id or --title must be provided")
-		}
-
-		// Validate that project is provided
-		if viewProject == "" {
-			logger.Log.Error("validation failed", "error", "project is required")
-			return fmt.Errorf("project is required")
 		}
 
 		// Parse ID if provided
@@ -84,8 +78,7 @@ var viewCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(viewCmd)
 
-	viewCmd.Flags().StringVarP(&viewID, "id", "i", "", "Ticket ID to view")
-	viewCmd.Flags().StringVarP(&viewTitle, "title", "t", "", "Ticket title to view")
-	viewCmd.Flags().StringVarP(&viewProject, "project", "p", "", "Project name (required)")
-	viewCmd.MarkFlagRequired("project")
+	viewCmd.Flags().StringVarP(&viewID, "id", "i", "", "Ticket ID to view (required if title not provided)")
+	viewCmd.Flags().StringVarP(&viewTitle, "title", "t", "", "Ticket title to view (required if ID not provided)")
+	viewCmd.Flags().StringVarP(&viewProject, "project", "p", "", "Project name (optional filter)")
 }
