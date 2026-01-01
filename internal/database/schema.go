@@ -88,6 +88,13 @@ const createUsersTable = `
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );`
 
+const createAuditTable = `
+	CREATE TABLE IF NOT EXISTS audit (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL UNIQUE
+			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);`
+
 
 const createTicketsIndexes = `
 CREATE INDEX IF NOT EXISTS idx_tickets_project ON tickets(project);
